@@ -21,6 +21,10 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
+import com.relevantcodes.extentreports.ExtentReports;
+import com.relevantcodes.extentreports.ExtentTest;
+import com.relevantcodes.extentreports.LogStatus;
+
 import utils.Misc;
 import Utilities.DataReader;
 
@@ -32,7 +36,9 @@ public class PowSmokeTest {
 	int sheetCount;
 	int rowNum[]={0,0};
 	WebDriver driver;
-	
+	ExtentReports report = null;
+	ExtentTest logger = null;
+
 	public void readInputData() {
 		inputFile="./TestData/pownewlinks.xlsx";
 		xlsx=new DataReader(inputFile);
@@ -50,6 +56,10 @@ public class PowSmokeTest {
 		System.setProperty("webdriver.chrome.driver", "c:\\ChromeDriver\\chromedriver_win32\\chromedriver.exe");
 		driver=new ChromeDriver();
 		driver.get("http://104.238.103.200:8080/POWNew/startadmin.do");
+		
+		String reportFile="./Reports/Current/results.html";
+		report=new ExtentReports(reportFile);
+
 	}
 	
 	@DataProvider(name="links")
@@ -79,12 +89,20 @@ public class PowSmokeTest {
 		System.out.print("==|==link ="+linkText);
 		System.out.print("==|==key ="+verifyKey);
 		System.out.println("--");
+		logger=report.startTest("Links Verification : "+tcnum);
+		logger.log(LogStatus.INFO, "Test Case Started");
+		logger.log(LogStatus.INFO, "Input Condition: Verification Key :"+verifyKey);
+
 		Assert.assertTrue(Misc.compare("in", "in"));
 	}
 
 	
-//	@Test
+	@Test
 	public void screenShotTest() throws Exception {
+		logger=report.startTest("Screenshot Verification : TC_008");
+		logger.log(LogStatus.INFO, "Test Case Started");
+		logger.log(LogStatus.INFO, "Input Condition: Random Input :");
+
 		driver.findElement(By.id("loginbutton")).click();
 		//File outputFile=new File("./Screenshots/output_screen899.png");
 		TakesScreenshot sshot=(TakesScreenshot) driver;
@@ -96,7 +114,7 @@ public class PowSmokeTest {
 			outputFile.delete();
 		}
 		Files.copy(inputFile.toPath(), outputFile.toPath()); 
-		
+		Assert.assertTrue(driver.getTitle().equals("SOMETHING"));
 	}
 	
 	@AfterMethod
@@ -114,13 +132,16 @@ public class PowSmokeTest {
 		System.out.println("isSuccess = "+tcresult);
 		System.out.println("Execution Time = "+timeInmilli);
 		System.out.println("After Each Test");
+
+		logger.log(LogStatus.PASS, "Execution Passed "+tcname);
+
 		} else 
 		{
-			/*StringWriter sw=new StringWriter();
+			StringWriter sw=new StringWriter();
 		    PrintWriter pw = new PrintWriter(sw);
 		    result.getThrowable().printStackTrace(pw);
 		    String strace=sw.toString();
-*/
+
 			String errMessage=result.getThrowable().getMessage();
 			System.out.println("false");
 			System.out.println("getName= "+tcname);
@@ -130,8 +151,15 @@ public class PowSmokeTest {
 			System.out.println("Error Message = "+errMessage);
 	//		System.out.println("Stace ="+strace);
 			System.out.println("After Each Test");
+			logger.log(LogStatus.FAIL, "Execution Failed ");
+			logger.log(LogStatus.FAIL, errMessage);
+			logger.log(LogStatus.FAIL, strace);
 				
 		}
+		
+		report.endTest(logger);
+		report.flush();
+
 	}
 	
 	@AfterClass
